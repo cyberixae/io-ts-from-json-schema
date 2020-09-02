@@ -110,8 +110,8 @@ function getDefaultExport(jsonFilePath: string) {
 }
 
 const definedHelper = `
-type Defined = {} | null
-class DefinedType extends t.Type<Defined> {
+export type Defined = {} | null
+export class DefinedType extends t.Type<Defined> {
   readonly _tag: 'DefinedType' = 'DefinedType'
   constructor() {
     super(
@@ -122,8 +122,8 @@ class DefinedType extends t.Type<Defined> {
     )
   }
 }
-interface DefinedC extends DefinedType {}
-const Defined: DefinedC = new DefinedType()
+export interface DefinedC extends DefinedType {}
+export const Defined: DefinedC = new DefinedType()
 `;
 
 const Defined = gen.customCombinator('Defined', 'Defined');
