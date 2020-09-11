@@ -105,22 +105,22 @@ export function* iotsfjs(
     return typenameFromRandom(withouExtension);
   }
 
-  const definedHelper = `
-export type Defined = {} | null
-export class DefinedType extends t.Type<Defined> {
-  readonly _tag: 'DefinedType' = 'DefinedType'
-  constructor() {
-    super(
-      'defined',
-      (u): u is Defined => typeof u !== 'undefined',
-      (u, c) => (this.is(u) ? t.success(u) : t.failure(u, c)),
-      t.identity
-    )
-  }
-}
-export interface DefinedC extends DefinedType {}
-export const Defined: DefinedC = new DefinedType()
-`;
+  const createHelper = (d: gen.TypeDeclaration) =>
+    `\n${gen.printStatic(d)}\n${gen.printRuntime(d)}\n`;
+
+  const definedHelper = createHelper(
+    gen.typeDeclaration(
+      'Defined',
+      gen.unionCombinator([
+        gen.unknownRecordType,
+        gen.unknownArrayType,
+        gen.stringType,
+        gen.booleanType,
+        gen.numberType,
+        gen.nullType,
+      ]),
+    ),
+  );
 
   const Defined = gen.customCombinator('Defined', 'Defined');
 
