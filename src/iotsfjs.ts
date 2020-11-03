@@ -7,6 +7,17 @@ import * as gen from 'io-ts-codegen';
 import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { printC } from './codegen/printc';
 
+function powerSet(seed) {
+  const emptySet = [];
+  return seed.reduce(
+    (subSets, current) => {
+      const superSets = subSets.map((subSet) => [current, ...subSet]);
+      return subSets.concat(superSets);
+    },
+    [emptySet],
+  );
+}
+
 export type Args = {
   import: Array<string>;
   documentURI: string;
@@ -720,7 +731,11 @@ export const Defined: DefinedC = new DefinedType()
 
   function fromAnyOf(schema: JSONSchema7): [gen.TypeReference] | [] {
     if ('anyOf' in schema && typeof schema.anyOf !== 'undefined') {
-      const combinators = schema.anyOf.map((s) => fromSchema(s));
+      warning('consider using oneOf instead of anyOf');
+      const components = schema.anyOf.map((s) => fromSchema(s));
+      const combinators = powerSet(components)
+        .filter((x) => x.length > 0)
+        .map(gen.intersectionCombinator);
       return genUnionCombinator(combinators);
     }
     return [];
