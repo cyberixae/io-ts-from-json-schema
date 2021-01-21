@@ -1,5 +1,6 @@
 import { JSONSchema7 } from 'json-schema';
 import * as gen from 'io-ts-codegen';
+import { parse as validate } from 'uri-template';
 
 import { DefInput } from '../types/def';
 
@@ -28,6 +29,8 @@ type Hyper = {
 
 export function toHrefTemplate(g: any): (link: LDO) => DefInput {
   return (link) => {
+
+    validate(link.href)
 
     const hrefTemplateExport = g.defaultExport.concat('_HrefTemplate')
     const schema: JSONSchema7 = {
@@ -193,12 +196,15 @@ export function toResponseBody(g: any): (link: LDO) => DefInput {
 export function toResponseHeaders(g: any): (link: LDO) => DefInput {
   return (link) => {
 
+    const headers = Object.entries(link.targetHints).map(([k,v]) => [k, v.join(', ')])
+
     const responseHeadersExport = g.defaultExport.concat('_ResponseHeaders')
     const schema: JSONSchema7 = {
       type: 'object',
-      properties: Object.fromEntries(Object.entries(link.targetHints).map(([k,v]) => [k, { enum: v}])),
-      required: Object.keys(link.targetHints),
+      properties: Object.fromEntries(headers.map(([k, v]) => [k, { type: "string", const: v }])),
+      required: headers.map(([k, _v]) => k),
       additionalProperties: true,
+      default: Object.fromEntries(headers),
     }
 
     const title = 'Response Headers'
