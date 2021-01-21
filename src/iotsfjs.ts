@@ -7,6 +7,8 @@ import * as path from 'path';
 import * as stream from 'stream';
 
 import { printC } from './codegen/printc';
+import { fromHyper } from './vocab/hyper';
+import { Examples, Def, DefMeta, DefInput } from './types/def';
 
 export type Args = {
   import: Array<string>;
@@ -195,6 +197,7 @@ export const Defined: DefinedC = new DefinedType()
     'uniqueItems',
     'default',
     'examples',
+    'links',
   ];
   const supportedOutsideRoot = ['$ref'];
 
@@ -382,7 +385,7 @@ export const Defined: DefinedC = new DefinedType()
         return location.concat(withoutSuffix.slice(uri.length));
       }
     }
-    return withoutSuffix;
+    return './'.concat(withoutSuffix);
   }
 
   function importBaseName(filePath: string): string {
@@ -783,20 +786,6 @@ export const Defined: DefinedC = new DefinedType()
     throw new Error(`unknown schema: ${JSON.stringify(schema)}`);
   }
 
-  type Examples = Array<unknown>;
-
-  type DefMeta = {
-    title: JSONSchema7['title'];
-    description: JSONSchema7['description'];
-    examples: Examples;
-    defaultValue: JSONSchema7['default'];
-  };
-
-  type DefInput = {
-    meta: DefMeta;
-    dec: gen.TypeDeclaration;
-  };
-
   function extractExamples(schema: JSONSchema7Definition): Examples {
     if (typeof schema === 'boolean') {
       // note that in this context true is any and false is never
@@ -942,18 +931,17 @@ export const Defined: DefinedC = new DefinedType()
       return namedDefs;
     }
     const rootDef = fromRoot(schema);
-    return namedDefs.concat(rootDef);
+    const hyperDef = fromHyper({
+      defaultExport,
+      extractExamples,
+      extractDefaultValue,
+      imps,
+      exps,
+      fromSchema,
+      generateChecks,
+    })(schema);
+    return namedDefs.concat(rootDef).concat(hyperDef);
   }
-
-  type Def = {
-    typeName: string;
-    title: string;
-    description: string;
-    examples: Array<unknown>;
-    defaultValue: unknown;
-    staticType: string;
-    runtimeType: string;
-  };
 
   function constructDefs(defInputs: Array<DefInput>): Array<Def> {
     const metas: Record<string, DefMeta> = {};
